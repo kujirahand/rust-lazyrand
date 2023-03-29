@@ -38,7 +38,7 @@ let n3 = lazyrand::rand();
 println!("nums = [{}, {}, {}]", n1, n2, n3);
 ```
 
-## Examples - Shuffle
+## Examples - Slice
 
 Shuffle slice
 
@@ -46,6 +46,22 @@ Shuffle slice
 let mut a = vec![1, 2, 3, 4, 5];
 lazyrand::shuffle(&mut a);
 println!("shuffled = {:?}", a);
+```
+
+choice one number from slice
+
+```
+let mut a = vec![1, 2, 3];
+let n = lazyrand::choice(&a);
+println!("choice = {:?}", n);
+```
+
+choice one &str from slice
+
+```
+let mut a = vec!["apple", "banana", "orange"];
+let s = lazyrand::choice(&a);
+println!("choice = {:?}", s);
 ```
 
 ## Examples with Random struct
@@ -67,4 +83,6 @@ println!("shuffled = {:?}", a);
 - rand()
 - randint(min, max)
 - shuffle(&mut slice)
+- choice(&slice)
+
 
