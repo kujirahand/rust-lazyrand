@@ -1,13 +1,16 @@
 # lazyrand for Rust
 
-It is a simple library for generating random numbers easily.
-Random numbers are automatically initialized.
+It is a library for generating random numbers easily.
+
+It is a library that can be used for various purposes such as games and dice.
 But this library is not cryptographically secure.
+
+The random seed is automatically initialized.
 
 - [crates.io](https://crates.io/crates/lazyrand)
 - [docs.rs](https://docs.rs/lazyrand)
 
-# How to install
+## How to install
 
 Run the following command in your terminal:
 
@@ -52,4 +55,16 @@ Generate random number with Random struct
 ```
 let mut random = lazyrand::Random::new();
 println!("random number = {}", random.randint(1, 6));
+
+let mut a = vec![1, 2, 3, 4, 5];
+random.shuffle(&mut a);
+println!("shuffled = {:?}", a);
 ```
+
+## methods
+
+- srand(seed)
+- rand()
+- randint(min, max)
+- shuffle(&mut slice)
+

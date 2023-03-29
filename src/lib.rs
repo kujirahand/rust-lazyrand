@@ -1,6 +1,6 @@
 //!
 //! It is a simple library for generating random numbers easily.
-//! Random numbers are automatically initialized.
+//! The random seed is automatically initialized.
 //! But this library is not cryptographically secure.
 //!
 //! # Examples
@@ -31,6 +31,19 @@
 //! let mut a = vec![1, 2, 3, 4, 5];
 //! lazyrand::shuffle(&mut a);
 //! println!("shuffled = {:?}", a);
+//! ```
+//!
+//!  Choice one element from slice
+//!
+//! ```
+//! // choice one number from slice
+//! let mut a = vec![1, 2, 3];
+//! let n = lazyrand::choice(&a);
+//! println!("choice = {:?}", n);
+//! // choice one &str from slice
+//! let mut a = vec!["apple", "banana", "orange"];
+//! let s = lazyrand::choice(&a);
+//! println!("choice = {:?}", s);
 //! ```
 //!
 //! # Examples with Random struct
@@ -88,6 +101,14 @@ impl Random {
             slice.swap(last, r);
             last -= 1;
         }
+    }
+    /// pick up one element from slice
+    pub fn choice<T: std::clone::Clone>(&mut self, slice: &[T]) -> Option<T> {
+        if slice.is_empty() {
+            return None;
+        }
+        let r = (self.rand() % (slice.len() as u64)) as usize;
+        Some(slice[r].clone())
     }
 }
 
@@ -149,6 +170,15 @@ pub fn shuffle<T>(slice: &mut [T]) {
         .lock()
         .unwrap();
     s.shuffle(slice);
+}
+
+/// pick up one element from slice
+pub fn choice<T: std::clone::Clone>(slice: &[T]) -> Option<T> {
+    let mut s = SEED_STATE
+        .get_or_init(|| Mutex::new(Random::new()))
+        .lock()
+        .unwrap();
+    s.choice(slice)
 }
 
 /*
@@ -234,5 +264,25 @@ mod tests {
         let mut random = Random::from_seed(111);
         random.shuffle(&mut a);
         assert_eq!(a, vec![2, 4, 5, 3, 1]);
+    }
+    #[test]
+    fn test_choice() {
+        let mut random = Random::from_seed(222);
+        // choice number
+        let a = vec![1, 2, 3, 4, 5];
+        let val = random.choice(&a).unwrap();
+        assert_eq!(val, 5);
+        let val = random.choice(&a).unwrap();
+        assert_eq!(val, 3);
+        // choice &str
+        let a = vec!["banana", "mango", "orange", "apple", "grape"];
+        let val = random.choice(&a).unwrap();
+        assert_eq!(val, "apple");
+        let val = random.choice(&a).unwrap();
+        assert_eq!(val, "grape");
+        // choice String
+        let a = vec!["banana".to_string(), "orange".to_string()];
+        let val = random.choice(&a).unwrap();
+        assert_eq!(val, "banana".to_string());
     }
 }
