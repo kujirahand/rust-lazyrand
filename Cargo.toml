@@ -1,6 +1,6 @@
 [package]
 name = "lazyrand"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["kujirahand"]
 description = "It is a simple library for generating random numbers easily."
