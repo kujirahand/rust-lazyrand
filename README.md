@@ -12,7 +12,7 @@ Run the following command in your terminal:
 cargo add lazyrand
 ```
 
-# Examples
+## Examples
 
 Generate random number
 
@@ -32,7 +32,7 @@ let n3 = lazyrand::rand();
 println!("nums = [{}, {}, {}]", n1, n2, n3);
 ```
 
-# Examples - Shuffle
+## Examples - Shuffle
 
 Shuffle slice
 
@@ -42,7 +42,7 @@ lazyrand::shuffle(&mut a);
 println!("shuffled = {:?}", a);
 ```
 
-# Examples with Random struct
+## Examples with Random struct
 
 Generate random number with Random struct
 
