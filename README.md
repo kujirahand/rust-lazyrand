@@ -4,7 +4,7 @@ It is a simple library for generating random numbers easily.
 Random numbers are automatically initialized.
 But this library is not cryptographically secure.
 
-- [crates.io/lazyrand][https://crates.io/crates/lazyrand]
+- [crates.io/lazyrand](https://crates.io/crates/lazyrand)
 
 # How to install
 
