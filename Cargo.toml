@@ -2,7 +2,7 @@
 name = "lazyrand"
 version = "0.1.1"
 edition = "2021"
-authors = ["kujirahand"]
+authors = ["kujirahand<web@kujirahand.com>"]
 description = "It is a simple library for generating random numbers easily."
 license = "MIT"
 repository = "https://github.com/kujirahand/rust-lazyrand"
@@ -11,7 +11,3 @@ categories = ["algorithms"]
 
 [dependencies]
 once_cell = "1.17.1"
-
-[package.metadata.docs.rs]
-all-features = true
-rustdoc-args = ["--cfg", "docsrs"]
