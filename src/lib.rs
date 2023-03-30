@@ -16,7 +16,7 @@
 //! It can be used to generate the same random number sequence.
 //!
 //! ```
-//! lazyrand::srand(123456);
+//! lazyrand::set_seed(123456);
 //! let n1 = lazyrand::rand();
 //! let n2 = lazyrand::rand();
 //! let n3 = lazyrand::rand();
@@ -57,10 +57,11 @@
 //!
 //!
 
-use once_cell::sync::OnceCell;
+use once_cell::sync::Lazy;
 use std::sync::Mutex;
 use std::time::SystemTime;
 
+const SEED_STATE_XOR_VALUE: u64 = 132366047211908; // for seed randomize
 pub struct Random {
     seed: u64,
 }
@@ -86,14 +87,12 @@ impl Random {
         xorshift64(&mut self.seed)
     }
     /// generate random number in range [min, max]
-    #[allow(dead_code)]
     pub fn randint(&mut self, min: i64, max: i64) -> i64 {
         let range = max - min + 1;
         let r = self.rand() % range as u64;
         (r as i64) + min
     }
     /// shuffle slice
-    #[allow(dead_code)]
     pub fn shuffle<T>(&mut self, slice: &mut [T]) {
         let mut last = slice.len() - 1;
         while last >= 1 {
@@ -110,37 +109,38 @@ impl Random {
         let r = (self.rand() % (slice.len() as u64)) as usize;
         Some(slice[r].clone())
     }
+    /// get random bool
+    pub fn randbool(&mut self) -> bool {
+        (self.rand() % 2) == 1
+    }
 }
 
-static SEED_STATE: OnceCell<Mutex<Random>> = OnceCell::new();
-const SEED_STATE_XOR_VALUE: u64 = 132366047211908; // random value
+static RANDOM: Lazy<Mutex<Random>> = Lazy::new(|| Mutex::new(Random::new()));
 
 /// set random seed
 pub fn srand(seed: u64) {
-    let mut s = SEED_STATE
-        .get_or_init(|| Mutex::new(Random::from_seed(seed)))
-        .lock()
-        .unwrap();
-    s.set_seed(seed);
+    RANDOM.lock().unwrap().set_seed(seed);
+}
+
+/// set random seed
+pub fn set_seed(seed: u64) {
+    RANDOM.lock().unwrap().set_seed(seed);
 }
 
 /// generate random number in range [0, u64::MAX]
 pub fn rand() -> u64 {
-    let mut s = SEED_STATE
-        .get_or_init(|| Mutex::new(Random::new()))
-        .lock()
-        .unwrap();
-    s.rand()
+    RANDOM.lock().unwrap().rand()
 }
 
 /// generate random number in range [min, max]
 #[allow(dead_code)]
 pub fn randint(min: i64, max: i64) -> i64 {
-    let mut s = SEED_STATE
-        .get_or_init(|| Mutex::new(Random::new()))
-        .lock()
-        .unwrap();
-    s.randint(min, max)
+    RANDOM.lock().unwrap().randint(min, max)
+}
+
+/// generate random value true or false
+pub fn randbool() -> bool {
+    RANDOM.lock().unwrap().randbool()
 }
 
 /// generate random number by xorshift64 algorithm
@@ -165,20 +165,12 @@ pub fn get_time_msec() -> u64 {
 
 /// shuffle slice
 pub fn shuffle<T>(slice: &mut [T]) {
-    let mut s = SEED_STATE
-        .get_or_init(|| Mutex::new(Random::new()))
-        .lock()
-        .unwrap();
-    s.shuffle(slice);
+    RANDOM.lock().unwrap().shuffle(slice)
 }
 
 /// pick up one element from slice
 pub fn choice<T: std::clone::Clone>(slice: &[T]) -> Option<T> {
-    let mut s = SEED_STATE
-        .get_or_init(|| Mutex::new(Random::new()))
-        .lock()
-        .unwrap();
-    s.choice(slice)
+    RANDOM.lock().unwrap().choice(slice)
 }
 
 /*
@@ -257,6 +249,14 @@ mod tests {
             v[r as usize] += 1;
         }
         assert!(v[0] > 400 && v[0] < 600);
+        //
+        srand(123456);
+        let mut v = vec![0, 0];
+        for _ in 0..1000 {
+            let r = randint(0, 1);
+            v[r as usize] += 1;
+        }
+        assert!(v[0] > 400 && v[0] < 600);
     }
     #[test]
     fn test_shuffle() {
@@ -284,5 +284,16 @@ mod tests {
         let a = vec!["banana".to_string(), "orange".to_string()];
         let val = random.choice(&a).unwrap();
         assert_eq!(val, "banana".to_string());
+    }
+    #[test]
+    fn test_rand_bool() {
+        srand(123456);
+        let mut v = [0, 0];
+        for _ in 0..1000 {
+            let r = randbool();
+            let r = if r { 1 } else { 0 };
+            v[r as usize] += 1;
+        }
+        assert!(v[0] > 400 && v[0] < 600);
     }
 }
