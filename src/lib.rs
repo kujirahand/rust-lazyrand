@@ -23,6 +23,13 @@
 //! println!("nums = [{}, {}, {}]", n1, n2, n3);
 //! ```
 //!
+//! Generate random floating point number
+//!
+//! ```
+//! let f = lazyrand::randf64();
+//! println!("num = {}", f);
+//! ```
+//!
 //! # Examples - Shuffle
 //!
 //! Shuffle slice
@@ -109,9 +116,13 @@ impl Random {
         let r = (self.rand() % (slice.len() as u64)) as usize;
         Some(slice[r].clone())
     }
-    /// get random bool
+    /// generate random bool
     pub fn randbool(&mut self) -> bool {
         (self.rand() % 2) == 1
+    }
+    /// generate random float in range 0.0 < 1.0
+    pub fn randf64(&mut self) -> f64 {
+        (1.0 / (u64::MAX as f64)) * (self.rand() as f64)
     }
 }
 
@@ -141,6 +152,11 @@ pub fn randint(min: i64, max: i64) -> i64 {
 /// generate random value true or false
 pub fn randbool() -> bool {
     RANDOM.lock().unwrap().randbool()
+}
+
+/// generate random float in range 0.0 < 1.0
+pub fn randf64() -> f64 {
+    RANDOM.lock().unwrap().randf64()
 }
 
 /// generate random number by xorshift64 algorithm
@@ -295,5 +311,13 @@ mod tests {
             v[r as usize] += 1;
         }
         assert!(v[0] > 400 && v[0] < 600);
+    }
+    #[test]
+    fn test_randf64() {
+        srand(123456);
+        for _ in 0..1000 {
+            let r = randf64();
+            assert!(r >= 0.0 && r < 1.0);
+        }
     }
 }
