@@ -82,9 +82,10 @@ fn main() {
 
 ## methods
 
-- srand(seed)
+- set_seed(seed) / srand(seed)
 - rand()
 - randint(min, max)
+- randbool()
 - shuffle(&mut slice)
 - choice(&slice)
 
