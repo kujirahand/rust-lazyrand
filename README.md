@@ -85,8 +85,8 @@ fn main() {
 - set_seed(seed) / srand(seed)
 - rand()
 - randint(min, max)
-- randbool()
 - shuffle(&mut slice)
 - choice(&slice)
+- rand_bool() / rand_usize() / rand_isize()
 
 

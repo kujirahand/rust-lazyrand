@@ -2,6 +2,7 @@
 //! It is a simple library for generating random numbers easily.
 //! The random seed is automatically initialized.
 //! But this library is not cryptographically secure.
+//! It is based on xoshiro256plusplus.
 //!
 //! # Examples
 //!
@@ -26,7 +27,7 @@
 //! Generate random floating point number
 //!
 //! ```
-//! let f = lazyrand::randf64();
+//! let f = lazyrand::rand_f64();
 //! println!("num = {}", f);
 //! ```
 //!
@@ -67,31 +68,34 @@
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
 use std::time::SystemTime;
+use xoshiro256pp::Xoroshiro256pp;
 
-const SEED_STATE_XOR_VALUE: u64 = 132366047211908; // for seed randomize
+// mod xorshift;
+mod xoshiro256pp;
+
 pub struct Random {
-    seed: u64,
+    pub gen: Xoroshiro256pp,
 }
 impl Random {
     /// create random generator by current time
     pub fn new() -> Self {
-        let mut s = Self { seed: 0 };
-        s.set_seed(get_time_msec());
-        s
+        let gen = Xoroshiro256pp::from_seed(get_time_msec());
+        Self { gen }
     }
+
     /// create random generator with seed
     pub fn from_seed(seed: u64) -> Self {
-        let mut s = Self { seed: 0 };
-        s.set_seed(seed);
-        s
+        let gen = Xoroshiro256pp::from_seed(seed);
+        Self { gen }
     }
+
     /// set random seed
     pub fn set_seed(&mut self, seed: u64) {
-        self.seed = seed ^ SEED_STATE_XOR_VALUE;
+        self.gen.set_seed(seed);
     }
     /// generate random number in range [0, u64::MAX]
     pub fn rand(&mut self) -> u64 {
-        xorshift64(&mut self.seed)
+        self.gen.next()
     }
     /// generate random number in range [min, max]
     pub fn randint(&mut self, min: i64, max: i64) -> i64 {
@@ -117,12 +121,20 @@ impl Random {
         Some(slice[r].clone())
     }
     /// generate random bool
-    pub fn randbool(&mut self) -> bool {
+    pub fn rand_bool(&mut self) -> bool {
         (self.rand() % 2) == 1
     }
     /// generate random float in range 0.0 < 1.0
-    pub fn randf64(&mut self) -> f64 {
+    pub fn rand_f64(&mut self) -> f64 {
         (1.0 / (u64::MAX as f64)) * (self.rand() as f64)
+    }
+    /// generate random number as isize
+    pub fn rand_isize(&mut self) -> isize {
+        self.rand() as isize
+    }
+    /// generate random number as usize
+    pub fn rand_usize(&mut self) -> usize {
+        self.rand() as usize
     }
 }
 
@@ -150,24 +162,23 @@ pub fn randint(min: i64, max: i64) -> i64 {
 }
 
 /// generate random value true or false
-pub fn randbool() -> bool {
-    RANDOM.lock().unwrap().randbool()
+pub fn rand_bool() -> bool {
+    RANDOM.lock().unwrap().rand_bool()
 }
 
 /// generate random float in range 0.0 < 1.0
-pub fn randf64() -> f64 {
-    RANDOM.lock().unwrap().randf64()
+pub fn rand_f64() -> f64 {
+    RANDOM.lock().unwrap().rand_f64()
 }
 
-/// generate random number by xorshift64 algorithm
-pub fn xorshift64(state: &mut u64) -> u64 {
-    let (a, b, c) = (13, 7, 17);
-    let mut x = *state;
-    x ^= x << a;
-    x ^= x >> b;
-    x ^= x << c;
-    *state = x;
-    *state
+/// generate random isize
+pub fn rand_isize() -> isize {
+    RANDOM.lock().unwrap().rand_isize()
+}
+
+/// generate random usize
+pub fn rand_usize() -> usize {
+    RANDOM.lock().unwrap().rand_usize()
 }
 
 /// get current time in milliseconds
@@ -218,35 +229,26 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_state() {
-        let mut seed = Random::from_seed(123456);
-        assert_eq!(seed.randint(-10, 10), -5);
-        assert_eq!(seed.rand(), 9134513685019898372);
-    }
-    #[test]
-    fn test_xorshift() {
-        let mut seed = Random::from_seed(123456);
-        let result = xorshift64(&mut seed.seed);
-        assert_eq!(result, 8689614632028771299);
-        let result = xorshift64(&mut seed.seed);
-        assert_eq!(result, 9134513685019898372);
-    }
-    #[test]
-    fn test_rand() {
-        let mut random = Random::from_seed(123456);
-        let result = random.rand();
-        assert_eq!(result, 8689614632028771299);
-        let result = random.rand();
-        assert_eq!(result, 9134513685019898372);
+    fn test_from_seed() {
+        let mut rnd = Random::from_seed(123456);
+        let a1 = rnd.rand();
+        let a2 = rnd.rand();
+        let a3 = rnd.rand();
+        let mut rnd2 = Random::from_seed(123456);
+        let b1 = rnd2.rand();
+        let b2 = rnd2.rand();
+        let b3 = rnd2.rand();
+        assert_eq!(a1, b1);
+        assert_eq!(a2, b2);
+        assert_eq!(a3, b3);
     }
     #[test]
     fn test_randint() {
         let mut random = Random::from_seed(123456);
-        let mut a = vec![];
-        for _ in 0..=4 {
-            a.push(random.randint(0, 9));
+        for _ in 0..=1000 {
+            let v = random.randint(0, 9);
+            assert!(v >= 0 && v <= 9);
         }
-        assert_eq!(a, vec![9, 2, 4, 4, 6]);
     }
     #[test]
     fn test_randint2() {
@@ -264,7 +266,7 @@ mod tests {
             let r = randint(0, 1);
             v[r as usize] += 1;
         }
-        assert!(v[0] > 400 && v[0] < 600);
+        assert!(v[0] > 450 && v[0] < 550);
         //
         srand(123456);
         let mut v = vec![0, 0];
@@ -272,14 +274,16 @@ mod tests {
             let r = randint(0, 1);
             v[r as usize] += 1;
         }
-        assert!(v[0] > 400 && v[0] < 600);
+        assert!(v[0] > 450 && v[0] < 550);
     }
     #[test]
     fn test_shuffle() {
-        let mut a = vec![1, 2, 3, 4, 5];
+        let mut a = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        let mut b = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         let mut random = Random::from_seed(111);
         random.shuffle(&mut a);
-        assert_eq!(a, vec![2, 4, 5, 3, 1]);
+        random.shuffle(&mut b);
+        assert_ne!(a, b);
     }
     #[test]
     fn test_choice() {
@@ -287,36 +291,38 @@ mod tests {
         // choice number
         let a = vec![1, 2, 3, 4, 5];
         let val = random.choice(&a).unwrap();
-        assert_eq!(val, 5);
+        assert!(val >= 1 && val <= 5);
+        //
+        let a = vec![1, 2];
         let val = random.choice(&a).unwrap();
-        assert_eq!(val, 3);
+        assert!(val >= 1 && val <= 2);
+        //
+        let a: Vec<usize> = vec![];
+        let res = random.choice(&a);
+        assert_eq!(res, None);
+
         // choice &str
-        let a = vec!["banana", "mango", "orange", "apple", "grape"];
+        let a = vec!["banana"];
         let val = random.choice(&a).unwrap();
-        assert_eq!(val, "apple");
-        let val = random.choice(&a).unwrap();
-        assert_eq!(val, "grape");
-        // choice String
-        let a = vec!["banana".to_string(), "orange".to_string()];
-        let val = random.choice(&a).unwrap();
-        assert_eq!(val, "banana".to_string());
+        assert_eq!(val, "banana");
     }
     #[test]
     fn test_rand_bool() {
         srand(123456);
         let mut v = [0, 0];
         for _ in 0..1000 {
-            let r = randbool();
+            let r = rand_bool();
             let r = if r { 1 } else { 0 };
             v[r as usize] += 1;
         }
+        println!("v={:?}", v);
         assert!(v[0] > 400 && v[0] < 600);
     }
     #[test]
     fn test_randf64() {
         srand(123456);
         for _ in 0..1000 {
-            let r = randf64();
+            let r = rand_f64();
             assert!(r >= 0.0 && r < 1.0);
         }
     }
