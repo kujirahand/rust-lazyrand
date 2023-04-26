@@ -68,6 +68,9 @@
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
 use std::time::SystemTime;
+use std::thread;
+use std::hash::{Hash, Hasher};
+use std::collections::hash_map::DefaultHasher;
 use xoshiro256pp::Xoroshiro256pp;
 
 // mod xorshift;
@@ -79,8 +82,17 @@ pub struct Random {
 impl Random {
     /// create random generator by current time
     pub fn new() -> Self {
-        let gen = Xoroshiro256pp::from_seed(get_time_msec());
+        let gen = Xoroshiro256pp::from_seed(Self::gen_seed());
         Self { gen }
+    }
+
+    pub fn gen_seed() -> u64 {
+        // generate seed by current time and thread id
+        let mut hasher = DefaultHasher::new();
+        hasher.write_u64(get_time_msec());
+        thread::current().id().hash(&mut hasher);
+        let hash = hasher.finish();
+        return hash;
     }
 
     /// create random generator with seed
