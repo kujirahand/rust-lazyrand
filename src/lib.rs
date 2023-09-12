@@ -195,13 +195,8 @@ pub fn rand_usize() -> usize {
 
 /// for WebAssembly (#1)
 #[cfg(target_arch = "wasm32")]
-extern "C" {
-    #[wasm_bindgen(js_namespace = performance)]
-    fn now() -> f64;
-}
-#[cfg(target_arch = "wasm32")]
 pub fn get_time_msec() -> u64 {
-    return now() as u64;
+    return 123456;
 }
 #[cfg(not(target_arch = "wasm32"))]
 /// get current time in milliseconds
