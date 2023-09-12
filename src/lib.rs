@@ -193,6 +193,19 @@ pub fn rand_usize() -> usize {
     RANDOM.lock().unwrap().rand_usize()
 }
 
+/// for WebAssembly (#1)
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = performance)]
+    fn now() -> f64;
+}
+#[cfg(target_arch = "wasm32")]
+pub fn get_time_msec() -> u64 {
+    return now() as u64;
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 /// get current time in milliseconds
 pub fn get_time_msec() -> u64 {
     let now = SystemTime::now();
@@ -201,6 +214,7 @@ pub fn get_time_msec() -> u64 {
         Err(_) => 0,
     };
 }
+
 
 /// shuffle slice
 pub fn shuffle<T>(slice: &mut [T]) {
