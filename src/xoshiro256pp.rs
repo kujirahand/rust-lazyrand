@@ -1,6 +1,6 @@
 //!
 //! xoshiro256pp
-//! (ref) https://prng.di.unimi.it/xoshiro256plusplus.c
+//! (ref) <https://prng.di.unimi.it/xoshiro256plusplus.c>
 //!
 
 pub struct Xoroshiro256pp {

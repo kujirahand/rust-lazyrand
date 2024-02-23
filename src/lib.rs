@@ -86,13 +86,9 @@ impl Random {
         Self { gen }
     }
 
+    /// generate seed by current time and thread id
     pub fn gen_seed() -> u64 {
-        // generate seed by current time and thread id
-        let mut hasher = DefaultHasher::new();
-        hasher.write_u64(get_time_msec());
-        thread::current().id().hash(&mut hasher);
-        let hash = hasher.finish();
-        return hash;
+        generate_seed()
     }
 
     /// create random generator with seed
@@ -195,19 +191,38 @@ pub fn rand_usize() -> usize {
 
 /// for WebAssembly (#1)
 #[cfg(target_arch = "wasm32")]
-pub fn get_time_msec() -> u64 {
-    return 123456;
+fn get_time_msec() -> u64 {
+    10164339691474454771
 }
 #[cfg(not(target_arch = "wasm32"))]
 /// get current time in milliseconds
-pub fn get_time_msec() -> u64 {
+fn get_time_msec() -> u64 {
     let now = SystemTime::now();
-    return match now.duration_since(SystemTime::UNIX_EPOCH) {
+    match now.duration_since(SystemTime::UNIX_EPOCH) {
         Ok(t) => t.as_micros() as u64,
         Err(_) => 0,
-    };
+    }
 }
-
+/// get local variable address
+fn get_var_addr() -> u64 {
+    let var = 0x1234567;
+    let var_ptr: *const u64 = &var;
+    let addr: u64 = var_ptr as u64;
+    if addr == 0 { var } else { addr }
+}
+/// get seed from address and time
+fn get_seed_from_addr_n_time() -> u64 {
+    get_var_addr() ^ get_time_msec()
+}
+/// generate seed by current time and thread id
+pub fn generate_seed() -> u64 {
+    // generate seed by current time and thread id
+    let mut hasher = DefaultHasher::new();
+    hasher.write_u64(get_seed_from_addr_n_time());
+    thread::current().id().hash(&mut hasher);
+    let hash = hasher.finish();
+    hash
+}
 
 /// shuffle slice
 pub fn shuffle<T>(slice: &mut [T]) {
@@ -345,4 +360,10 @@ mod tests {
             assert!(r >= 0.0 && r < 1.0);
         }
     }
+    #[test]
+    fn test_rand_seed() {
+        let seed = Random::gen_seed();
+        assert!(seed != 0);
+    }
+
 }

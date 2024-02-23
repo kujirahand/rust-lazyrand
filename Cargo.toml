@@ -1,6 +1,6 @@
 [package]
 name = "lazyrand"
-version = "0.1.9"
+version = "0.1.10"
 edition = "2021"
 authors = ["kujirahand<web@kujirahand.com>"]
 description = "It is a simple library for generating random numbers easily."
@@ -10,4 +10,4 @@ keywords = ["rand", "random", "xorshift"]
 categories = ["algorithms"]
 
 [dependencies]
-once_cell = "1.17.1"
+once_cell = "1.19.0"

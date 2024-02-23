@@ -45,23 +45,23 @@ Shuffle slice
 ```rust
 let mut a = vec![1, 2, 3, 4, 5];
 lazyrand::shuffle(&mut a);
-println!("shuffled = {:?}", a);
+println!("shuffled = {:?}", a); // (ex) shuffled = [2, 4, 1, 5, 3]
 ```
 
 choice one number from slice
 
 ```rust
-let mut a = vec![1, 2, 3];
+let a = vec![1, 2, 3];
 let n = lazyrand::choice(&a);
-println!("choice = {:?}", n);
+println!("choice = {:?}", n); // (ex) choice = Some(5)
 ```
 
 choice one &str from slice
 
 ```rust
 let mut a = vec!["apple", "banana", "orange"];
-let s = lazyrand::choice(&a);
-println!("choice = {:?}", s);
+let s = lazyrand::choice(&a).unwrap();
+println!("choice = {}", s); // (ex) choice = orange
 ```
 
 ## Examples with Random struct
