@@ -82,11 +82,10 @@ fn main() {
 
 ## methods
 
-- set_seed(seed) / srand(seed)
-- rand()
+- set_seed(seed) / srand(seed) / generate_seed()
 - randint(min, max)
 - shuffle(&mut slice)
 - choice(&slice)
-- rand_bool() / rand_usize() / rand_isize()
+- rand() / rand_bool() / rand_usize() / rand_isize() / rand_f64()
 
 
