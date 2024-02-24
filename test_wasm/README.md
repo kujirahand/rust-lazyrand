@@ -28,7 +28,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-lazyrand = "0.1.10"
+lazyrand = "0.1.12"
 ```
 
 ## Write src/lib.rs
