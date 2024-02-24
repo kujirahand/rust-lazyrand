@@ -6,14 +6,22 @@
 </head>
 <body style="background-color: black; color: white;">
     <h1>lazyrand wasm test</h1>
-    <div id="info"></div>
+    <div id="info1"></div><hr>
+    <div id="info2"></div><hr>
     <script type="module">
-        // WASMを読み込む
-        import init, { wasm_randint } from "./pkg/wasm_test.js";
+        // load wasm module
+        import init, { randint, rand, set_seed } from "./pkg/wasm_test.js";
         init().then(() => {
-            console.log('@', wasm_randint(1, 6))
-            // call wasm function
-            document.getElementById("info").innerText = wasm_randint(1, 6);
+            // call wasm function in console
+            console.log('randint=',randint(1, 6))
+            console.log('rand=', rand())
+            document.getElementById("info1").innerHTML = rand();
+            // call many times
+            let s = '';
+            for (let i = 0; i < 20; i++) {
+                s += '' + randint(1, 6) + '<br>';
+            }
+            document.getElementById("info2").innerHTML = s;
         });
     </script>
 </body>

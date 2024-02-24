@@ -33,12 +33,32 @@ lazyrand = "0.1.10"
 
 ## Write src/lib.rs
 
+The function is defined as follows. The definition provided is for the case when the randint function is used.
+
 ```rs:src/lib.rs
+// define for lazyrand
 #[wasm_bindgen]
-pub fn wasm_randint(min: i64, max: i64) -> i64 {
-    lazyrand::randint(min, max)
+pub fn randint(min: isize, max: isize) -> i64 {
+    if lazyrand::get_tag() != 2 { lazyrand::set_seed_plus(get_current_time()); }
+    lazyrand::randint(min as i64, max as i64)
+}
+// for get_current_time
+#[wasm_bindgen]
+extern "C" {
+    type Date;
+    #[wasm_bindgen(constructor)]
+    fn new() -> Date;
+    #[wasm_bindgen(method)]
+    fn getTime(this: &Date) -> f64;
+}
+#[wasm_bindgen]
+pub fn get_current_time() -> u64 {
+    let date = Date::new();
+    (date.getTime() * 1000.0) as u64
 }
 ```
+
+For other definitions, please refer to the actual lib.rs file.
 
 ## build
 
@@ -51,9 +71,9 @@ wasm-pack build --target web --release
 ```html:index.html
 <script type="module">
     // WASMを読み込む
-    import init, { wasm_rand } from "./pkg/wasm_test.js";
+    import init, { randint } from "./pkg/wasm_test.js";
     init().then(() => {
-        console.log('rand=', wasm_randint(1, 6))
+        console.log('randint=', randint(1, 6))
     });
 </script>
 ```

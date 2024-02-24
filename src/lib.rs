@@ -76,12 +76,13 @@ mod xoshiro256pp;
 
 pub struct Random {
     pub gen: Xoroshiro256pp,
+    pub tag: u32, // tag=0: not initialized/1: auto generated seed/2: user specified seed
 }
 impl Random {
     /// create random generator by current time
     pub fn new() -> Self {
         let gen = Xoroshiro256pp::from_seed(Self::gen_seed());
-        Self { gen }
+        Self { gen, tag: 1 } // tag=1 ... auto generated seed
     }
 
     /// generate seed by current time and thread id
@@ -92,11 +93,12 @@ impl Random {
     /// create random generator with seed
     pub fn from_seed(seed: u64) -> Self {
         let gen = Xoroshiro256pp::from_seed(seed);
-        Self { gen }
+        Self { gen, tag: 2 } // tag=2 ... user specified seed
     }
 
     /// set random seed
     pub fn set_seed(&mut self, seed: u64) {
+        self.tag = 2;
         self.gen.set_seed(seed);
     }
     /// generate random number in range [0, u64::MAX]
@@ -146,6 +148,16 @@ impl Random {
 
 static RANDOM: Lazy<Mutex<Random>> = Lazy::new(|| Mutex::new(Random::new()));
 
+/// get tag
+pub fn get_tag() -> u32 {
+    RANDOM.lock().unwrap().tag
+}
+
+/// set tag
+pub fn set_tag(tag: u32) {
+    RANDOM.lock().unwrap().tag = tag;
+}
+
 /// set random seed
 pub fn srand(seed: u64) {
     RANDOM.lock().unwrap().set_seed(seed);
@@ -154,6 +166,12 @@ pub fn srand(seed: u64) {
 /// set random seed
 pub fn set_seed(seed: u64) {
     RANDOM.lock().unwrap().set_seed(seed);
+}
+
+/// set random seed
+pub fn set_seed_plus(seed: u64) {
+    let seed_plus = generate_seed() ^ seed;
+    RANDOM.lock().unwrap().set_seed(seed_plus);
 }
 
 /// generate random number in range [0, u64::MAX]
@@ -202,7 +220,7 @@ fn get_time_msec() -> u64 {
     }
 }
 /// get local variable address
-fn get_var_addr() -> u64 {
+pub fn get_var_addr() -> u64 {
     let var = 0x1234567;
     let var_ptr: *const u64 = &var;
     let addr: u64 = var_ptr as u64;
