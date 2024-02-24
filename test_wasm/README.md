@@ -35,7 +35,7 @@ lazyrand = "0.1.12"
 
 The function is defined as follows. The definition provided is for the case when the randint function is used.
 
-```rs:src/lib.rs
+```rust:src/lib.rs
 // define for lazyrand
 #[wasm_bindgen]
 pub fn randint(min: isize, max: isize) -> i64 {
