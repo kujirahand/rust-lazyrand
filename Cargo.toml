@@ -1,12 +1,12 @@
 [package]
 name = "lazyrand"
-version = "0.1.10"
+version = "0.1.11"
 edition = "2021"
 authors = ["kujirahand<web@kujirahand.com>"]
 description = "It is a simple library for generating random numbers easily."
 license = "MIT"
 repository = "https://github.com/kujirahand/rust-lazyrand"
-keywords = ["rand", "random", "xorshift"]
+keywords = ["rand", "random", "xoshiro256plusplus", "WASM"]
 categories = ["algorithms"]
 
 [dependencies]

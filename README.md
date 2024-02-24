@@ -80,6 +80,10 @@ fn main() {
 }
 ```
 
+## How to Use Lazyrand with WASM
+
+Please see [test_wasm](test_wasm/README.md).
+
 ## methods
 
 - set_seed(seed) / srand(seed) / generate_seed()

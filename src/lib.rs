@@ -64,10 +64,8 @@
 //! ```
 //!
 //!
-
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
-use std::time::SystemTime;
 use std::thread;
 use std::hash::{Hash, Hasher};
 use std::collections::hash_map::DefaultHasher;
@@ -197,8 +195,8 @@ fn get_time_msec() -> u64 {
 #[cfg(not(target_arch = "wasm32"))]
 /// get current time in milliseconds
 fn get_time_msec() -> u64 {
-    let now = SystemTime::now();
-    match now.duration_since(SystemTime::UNIX_EPOCH) {
+    let now = std::time::SystemTime::now();
+    match now.duration_since(std::time::SystemTime::UNIX_EPOCH) {
         Ok(t) => t.as_micros() as u64,
         Err(_) => 0,
     }
