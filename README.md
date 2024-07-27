@@ -1,16 +1,15 @@
 # lazyrand for Rust
 
-It is a library for generating random numbers easily.
+This is a library for generating random numbers easily. The random seed is automatically initialized. This crate supports WASM.
 
-It is a library that can be used for various purposes such as games and dice.
-But this library is not cryptographically secure.
+This library can be used for various purposes such as games and dice. However, this library is not cryptographically secure.
 
-The random seed is automatically initialized.
+It uses xoshiro256++ for random number generation.
 
 - [crates.io](https://crates.io/crates/lazyrand)
 - [docs.rs](https://docs.rs/lazyrand)
 
-## How to install
+## Install
 
 Run the following command in your terminal:
 

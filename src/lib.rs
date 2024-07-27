@@ -66,23 +66,27 @@
 //!
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
-use std::thread;
-use std::hash::{Hash, Hasher};
-use std::collections::hash_map::DefaultHasher;
 use xoshiro256pp::Xoroshiro256pp;
 
 // mod xorshift;
 mod xoshiro256pp;
 
+#[derive(Debug, Clone, Copy)]
+pub enum SeedTag {
+    None = 0,
+    Auto = 1,
+    User = 2,
+}
+
 pub struct Random {
     pub gen: Xoroshiro256pp,
-    pub tag: u32, // tag=0: not initialized/1: auto generated seed/2: user specified seed
+    pub tag: SeedTag, // tag=0: not initialized/1: auto generated seed/2: user specified seed
 }
 impl Random {
     /// create random generator by current time
     pub fn new() -> Self {
         let gen = Xoroshiro256pp::from_seed(Self::gen_seed());
-        Self { gen, tag: 1 } // tag=1 ... auto generated seed
+        Self { gen, tag: SeedTag::Auto } // auto generated seed
     }
 
     /// generate seed by current time and thread id
@@ -93,12 +97,12 @@ impl Random {
     /// create random generator with seed
     pub fn from_seed(seed: u64) -> Self {
         let gen = Xoroshiro256pp::from_seed(seed);
-        Self { gen, tag: 2 } // tag=2 ... user specified seed
+        Self { gen, tag: SeedTag::User } // user specified seed
     }
 
     /// set random seed
     pub fn set_seed(&mut self, seed: u64) {
-        self.tag = 2;
+        self.tag = SeedTag::User;
         self.gen.set_seed(seed);
     }
     /// generate random number in range [0, u64::MAX]
@@ -149,12 +153,12 @@ impl Random {
 static RANDOM: Lazy<Mutex<Random>> = Lazy::new(|| Mutex::new(Random::new()));
 
 /// get tag
-pub fn get_tag() -> u32 {
+pub fn get_tag() -> SeedTag {
     RANDOM.lock().unwrap().tag
 }
 
 /// set tag
-pub fn set_tag(tag: u32) {
+pub fn set_tag(tag: SeedTag) {
     RANDOM.lock().unwrap().tag = tag;
 }
 
@@ -207,37 +211,75 @@ pub fn rand_usize() -> usize {
 
 /// for WebAssembly (#1)
 #[cfg(target_arch = "wasm32")]
-fn get_time_msec() -> u64 {
-    10164339691474454771
-}
-#[cfg(not(target_arch = "wasm32"))]
-/// get current time in milliseconds
-fn get_time_msec() -> u64 {
-    let now = std::time::SystemTime::now();
-    match now.duration_since(std::time::SystemTime::UNIX_EPOCH) {
-        Ok(t) => t.as_micros() as u64,
-        Err(_) => 0,
+pub mod lazyrand_time {
+    use wasm_bindgen::prelude::*;
+    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen]
+    extern "C" {
+        type Date;
+        #[wasm_bindgen(constructor)]
+        fn new() -> Date;
+        #[wasm_bindgen(method)]
+        fn getTime(this: &Date) -> f64;
+    }
+    #[wasm_bindgen]
+    extern "C" {
+        #[wasm_bindgen(js_namespace = Math)]
+        fn random() -> f64;
+    }
+    #[wasm_bindgen]
+    pub fn get_time_msec() -> u64 {
+        let date = Date::new();
+        (date.getTime() * 1000.0) as u64
+    }
+    #[wasm_bindgen]
+    pub fn get_init_seed() -> u64 {
+        let t = get_time_msec(); // current time
+        let r = (random() * 1000000.0) as u64; // get seed from browser
+        t ^ r
     }
 }
-/// get local variable address
-pub fn get_var_addr() -> u64 {
-    let var = 0x1234567;
-    let var_ptr: *const u64 = &var;
-    let addr: u64 = var_ptr as u64;
-    if addr == 0 { var } else { addr }
+
+#[cfg(not(target_arch = "wasm32"))]
+pub mod lazyrand_time {
+    use std::thread;
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+
+    /// get current time in milliseconds
+    pub fn get_time_msec() -> u64 {
+        let now = std::time::SystemTime::now();
+        match now.duration_since(std::time::SystemTime::UNIX_EPOCH) {
+            Ok(t) => t.as_micros() as u64,
+            Err(_) => 0,
+        }
+    }
+    /// get local variable address
+    pub fn get_var_addr() -> u64 {
+        let var = 0x1234567;
+        let var_ptr: *const u64 = &var;
+        let addr: u64 = var_ptr as u64;
+        if addr == 0 { var } else { addr }
+    }
+    /// get seed from address and time
+    fn get_seed_from_addr_n_time() -> u64 {
+        get_var_addr() ^ get_time_msec()
+    }
+
+    /// get inital seed
+    pub fn get_init_seed() -> u64 {
+        // generate seed by current time and thread id
+        let mut hasher = DefaultHasher::new();
+        hasher.write_u64(get_seed_from_addr_n_time());
+        thread::current().id().hash(&mut hasher);
+        let hash = hasher.finish();
+        hash
+    }
 }
-/// get seed from address and time
-fn get_seed_from_addr_n_time() -> u64 {
-    get_var_addr() ^ get_time_msec()
-}
-/// generate seed by current time and thread id
+
+/// generate seed
 pub fn generate_seed() -> u64 {
-    // generate seed by current time and thread id
-    let mut hasher = DefaultHasher::new();
-    hasher.write_u64(get_seed_from_addr_n_time());
-    thread::current().id().hash(&mut hasher);
-    let hash = hasher.finish();
-    hash
+    lazyrand_time::get_init_seed()
 }
 
 /// shuffle slice

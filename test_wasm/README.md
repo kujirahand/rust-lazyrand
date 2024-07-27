@@ -7,9 +7,13 @@ How to make wasm project with lazyrand?
 install crates:
 
 ```sh
+# create project
+cargo init --lib
+
 # install wasm-pack
 cargo install wasm-pack
 cargo add wasm-bindgen
+
 # install lazyrand
 cargo add lazyrand
 ```
@@ -19,16 +23,11 @@ cargo add lazyrand
 Add Cargo.toml to crate-type.
 
 ```toml:Cargo.toml
-[package]
-name = "wasm_test"
-version = "0.1.0"
-edition = "2021"
+...
 
 [lib]
-crate-type = ["cdylib"]
-
-[dependencies]
-lazyrand = "0.1.12"
+crate-type = ["cdylib", "rlib"]
+...
 ```
 
 ## Write src/lib.rs
@@ -36,25 +35,17 @@ lazyrand = "0.1.12"
 The function is defined as follows. The definition provided is for the case when the randint function is used.
 
 ```rust:src/lib.rs
-// define for lazyrand
+use wasm_bindgen::prelude::*;
+
+/// return random value
 #[wasm_bindgen]
 pub fn randint(min: isize, max: isize) -> i64 {
-    if lazyrand::get_tag() != 2 { lazyrand::set_seed_plus(get_current_time()); }
     lazyrand::randint(min as i64, max as i64)
 }
-// for get_current_time
+/// return random value
 #[wasm_bindgen]
-extern "C" {
-    type Date;
-    #[wasm_bindgen(constructor)]
-    fn new() -> Date;
-    #[wasm_bindgen(method)]
-    fn getTime(this: &Date) -> f64;
-}
-#[wasm_bindgen]
-pub fn get_current_time() -> u64 {
-    let date = Date::new();
-    (date.getTime() * 1000.0) as u64
+pub fn rand() -> u64 {
+    lazyrand::rand()
 }
 ```
 
@@ -71,7 +62,7 @@ wasm-pack build --target web --release
 ```html:index.html
 <script type="module">
     // WASMを読み込む
-    import init, { randint } from "./pkg/wasm_test.js";
+    import init, { randint, rand } from "./pkg/wasm_test.js";
     init().then(() => {
         console.log('randint=', randint(1, 6))
     });
